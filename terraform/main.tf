@@ -6,6 +6,38 @@
 # HTTPS Web bucket 
 #
 
+data "external" "get_mime_app" { 
+  for_each = fileset("..//demo-app//build//", "**")
+  program = ["bash", "../scripts/get_mime.sh"]
+  query = {
+    filepath : "../demo-app/build/${each.key}"
+  }
+}
+
+data "external" "get_mime_css" { 
+  for_each = fileset("..//demo-app//build//static//css", "**")
+  program = ["bash", "../scripts/get_mime.sh"]
+  query = {
+    filepath : "../demo-app/build/static/css/${each.key}"
+  }
+}
+
+data "external" "get_mime_js" { 
+  for_each = fileset("..//demo-app//build//static//js", "**")
+  program = ["bash", "../scripts/get_mime.sh"]
+  query = {
+    filepath : "../demo-app/build/static/js/${each.key}"
+  }
+}
+
+data "external" "get_mime_media" { 
+  for_each = fileset("..//demo-app//build//static//media", "**")
+  program = ["bash", "../scripts/get_mime.sh"]
+  query = {
+    filepath : "../demo-app/build/static/media/${each.key}"
+  }
+}
+
 resource "aws_s3_bucket" "app_bucket_https" {
   bucket = "react.training.alfredbrowniii.io"
 }
@@ -26,6 +58,8 @@ resource "aws_s3_object" "app_bucket_https" {
   for_each = fileset("..//demo-app//build/", "*")
   key = each.value
   source = "..//demo-app//build//${each.value}"
+  #content_type = "application/octet-stream"
+  content_type = data.external.get_mime_app[each.key].result.mime
 }
 
 
@@ -34,6 +68,7 @@ resource "aws_s3_object" "static_css" {
   for_each = fileset("..//demo-app//build//static//css", "*")
   key = "static/css/${each.value}"
   source = "..//demo-app//build//static//css//${each.value}"
+  content_type = data.external.get_mime_css[each.key].result.mime
 }
 
 resource "aws_s3_object" "static_js" {
@@ -41,6 +76,8 @@ resource "aws_s3_object" "static_js" {
   for_each = fileset("..//demo-app//build//static//js", "*")
   key = "static/js/${each.value}"
   source = "..//demo-app//build//static//js//${each.value}"
+  #content_type = "application/octet-stream"
+  content_type = data.external.get_mime_js[each.key].result.mime
 }
 
 resource "aws_s3_object" "static_media" {
@@ -48,6 +85,8 @@ resource "aws_s3_object" "static_media" {
   for_each = fileset("..//demo-app//build//static//media", "*")
   key = "static/media/${each.value}"
   source = "..//demo-app//build//static//media//${each.value}"
+  #content_type = "application/octet-stream"
+  content_type = data.external.get_mime_media[each.key].result.mime
 }
 
 data "aws_iam_policy_document" "allow_public_access" {
@@ -56,7 +95,6 @@ data "aws_iam_policy_document" "allow_public_access" {
 
     sid = "AddPerm"
     principals {
-      type = "AWS"
       identifiers = [ "*" ]
     }
     actions = [
