@@ -50,3 +50,8 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     ssl_support_method = "sni-only"
   }
 }
+
+# 
+# WAFv2 
+# 
+
