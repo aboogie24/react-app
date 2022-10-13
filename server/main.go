@@ -1,11 +1,21 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	_ "github.com/lib/pq"
+)
+
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "aboogie"
+	password = "fatboy24"
+	dbname   = "reactapp"
 )
 
 type Todo struct {
@@ -15,8 +25,37 @@ type Todo struct {
 	Done  bool   `json:"done"`
 }
 
+func db_connection() {
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s "+
+		"dbname=%s sslmode=disable", host, port, user, password, dbname)
+
+	println(psqlInfo)
+
+	db, err := sql.Open("postgres", psqlInfo)
+	CheckError(err)
+
+	defer db.Close()
+
+	err = db.Ping()
+	CheckError(err)
+}
+
+func CheckError(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func InsertStmt(db *sql.DB, body string, title string) {
+	sqlStatement := `INSERT INTO Todo (body, title) VALUES ($1, $2)`
+
+	_, err := db.Exec(sqlStatement)
+	CheckError(err)
+}
+
 func main() {
-	fmt.Print("Hello World")
+
+	db_connection()
 
 	app := fiber.New()
 
@@ -66,6 +105,6 @@ func main() {
 	app.Get("/api/todos", func(c *fiber.Ctx) error {
 		return c.JSON(todos)
 	})
-	log.Fatal(app.Listen(":4001"))
+	log.Fatal(app.Listen(":4005"))
 
 }
